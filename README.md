@@ -9,7 +9,6 @@ in the current project directory.
 ```text
 .
 +-- inference.py
-+-- setup.bash
 +-- requirements.txt
 +-- environment.yml
 +-- models/
@@ -17,7 +16,7 @@ in the current project directory.
 +-- sample_test_project_2/
     +-- images/
     +-- test.csv
-    +-- sample_submission.csv
++-- sample_submission.csv
 ```
 
 ## Grading Commands
