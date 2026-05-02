@@ -3,7 +3,7 @@ set -euo pipefail
 
 # If this setup.bash is submitted alone, set REPO_URL to your public GitHub repo.
 # Example: REPO_URL="https://github.com/your-user/gnr-638-project.git"
-REPO_URL="${REPO_URL:-}"
+REPO_URL="${REPO_URL:-https://github.com/Rrp10157/GNR-638-Project-2.git}"
 ENV_NAME="${ENV_NAME:-gnr_project_env}"
 MODEL_ID="${MODEL_ID:-Qwen/Qwen3.5-9B}"
 MODEL_DIR="${MODEL_DIR:-models/qwen-vl}"
