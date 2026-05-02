@@ -5,7 +5,7 @@ set -euo pipefail
 # Example: REPO_URL="https://github.com/your-user/gnr-638-project.git"
 REPO_URL="${REPO_URL:-https://github.com/Rrp10157/GNR-638-Project-2.git}"
 ENV_NAME="${ENV_NAME:-gnr_project_env}"
-MODEL_ID="${MODEL_ID:-Qwen/Qwen3.5-9B}"
+MODEL_ID="${MODEL_ID:-Qwen/Qwen2.5-VL-7B-Instruct}"
 MODEL_DIR="${MODEL_DIR:-models/qwen-vl}"
 
 ROOT_DIR="$(pwd)"
@@ -48,9 +48,23 @@ python -m pip install -r requirements.txt
 
 mkdir -p "$MODEL_DIR"
 echo "Downloading model weights: $MODEL_ID -> $MODEL_DIR"
-huggingface-cli download "$MODEL_ID" \
-  --local-dir "$MODEL_DIR" \
-  --exclude "*.md" ".gitattributes" "onnx/*" "gguf/*"
+python - <<PYEOF
+from huggingface_hub import snapshot_download
+import os, glob, sys
+
+snapshot_download(
+    repo_id="$MODEL_ID",
+    local_dir="$MODEL_DIR",
+    ignore_patterns=["*.md", ".gitattributes", "onnx/*", "gguf/*"],
+)
+
+# Verify weight files are present
+weights = glob.glob(os.path.join("$MODEL_DIR", "*.safetensors"))
+if not weights:
+    print("ERROR: Model download incomplete — no .safetensors files found.")
+    sys.exit(1)
+print(f"Model download verified: {len(weights)} weight file(s) found.")
+PYEOF
 
 echo "$MODEL_ID" > "$MODEL_DIR/model_id.txt"
 

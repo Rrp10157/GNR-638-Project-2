@@ -81,6 +81,12 @@ def load_model(model_dir: str):
         raise FileNotFoundError(
             f"Model directory {model_path} not found. Run setup.bash while internet is available."
         )
+    safetensors = list(model_path.glob("*.safetensors"))
+    if not safetensors:
+        raise FileNotFoundError(
+            f"Model weights not found in {model_path}. "
+            f"Download is incomplete — wait for setup.bash to finish."
+        )
 
     processor = AutoProcessor.from_pretrained(
         model_path,
@@ -89,22 +95,41 @@ def load_model(model_dir: str):
         use_fast=True,
     )
 
-    model_kwargs = {
-        "device_map": "auto",
-        "torch_dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32,
-        "low_cpu_mem_usage": True,
-        "local_files_only": True,
-        "trust_remote_code": True,
-    }
-    if should_use_4bit():
-        model_kwargs["quantization_config"] = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-        )
-
-    model = AutoModelForImageTextToText.from_pretrained(model_path, **model_kwargs)
+    if torch.cuda.is_available():
+        print(f"GPU detected: {torch.cuda.get_device_name(0)} — running on GPU.")
+        model_kwargs = {
+            "device_map": "auto",
+            "torch_dtype": torch.bfloat16,
+            "low_cpu_mem_usage": True,
+            "local_files_only": True,
+            "trust_remote_code": True,
+        }
+        if should_use_4bit():
+            print("VRAM < 16 GB — loading in 4-bit quantization.")
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+            )
+        try:
+            model = AutoModelForImageTextToText.from_pretrained(model_path, **model_kwargs)
+        except ValueError:
+            print("WARNING: Not enough GPU VRAM even for 4-bit — falling back to CPU (slow).")
+            model_kwargs.pop("quantization_config", None)
+            model_kwargs["device_map"] = "cpu"
+            model_kwargs["torch_dtype"] = torch.float32
+            model = AutoModelForImageTextToText.from_pretrained(model_path, **model_kwargs)
+    else:
+        print("No GPU detected — running on CPU (slow).")
+        model_kwargs = {
+            "device_map": "cpu",
+            "torch_dtype": torch.float32,
+            "low_cpu_mem_usage": True,
+            "local_files_only": True,
+            "trust_remote_code": True,
+        }
+        model = AutoModelForImageTextToText.from_pretrained(model_path, **model_kwargs)
     model.eval()
     return processor, model
 
