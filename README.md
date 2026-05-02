@@ -32,14 +32,14 @@ conda remove --name gnr_project_env --all -y
 
 ## Model
 
-The default model is `Qwen/Qwen3.5-9B`, downloaded during `setup.bash` into
+The default model is `Qwen/Qwen2.5-VL-7B-Instruct`, downloaded during `setup.bash` into
 `models/qwen-vl`. Inference uses `local_files_only=True`, so it does not require
 internet access during grading.
 
 For a smaller local dry run on a 6 GB GPU, override the model before setup:
 
 ```bash
-MODEL_ID=Qwen/Qwen3.5-4B bash setup.bash
+MODEL_ID=Qwen/Qwen2.5-VL-3B-Instruct bash setup.bash
 ```
 
 or force 4-bit loading during inference:
